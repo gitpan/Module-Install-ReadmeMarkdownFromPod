@@ -3,17 +3,19 @@ package Module::Install::ReadmeMarkdownFromPod;
 use 5.006;
 use strict;
 use warnings;
-use Pod::Markdown;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use base qw(Module::Install::Base);
 
 sub readme_markdown_from {
-    my $self = shift;
+    my ($self, $file, $clean) = @_;
     return unless $Module::Install::AUTHOR;
-    my $file = shift || return;
-    my $clean = shift;
+    die "syntax: readme_markdown_from $file, [$clean]\n" unless $file;
+
+    # require, not use because otherwise Makefile.PL will complain if
+    # non-authors don't have Pod::Markdown, which would be bad.
+    require Pod::Markdown;
 
     my $parser = Pod::Markdown->new;
     $parser->parse_from_file($file);
@@ -29,6 +31,14 @@ license_clean:
 \t\$(RM_F) README.mkdn
 END
     1;
+}
+
+sub reference_module {
+    my ($self, $file) = @_;
+    die "syntax: reference_module $file\n" unless $file;
+    $self->all_from($file);
+    $self->readme_from($file);
+    $self->readme_markdown_from($file);
 }
 
 1;
@@ -48,8 +58,8 @@ Module::Install::ReadmeMarkdownFromPod - create README.mkdn from POD
 
     # in Makefile.PL
     use inc::Module::Install;
-    name 'Foo-Bar';
-    readme_markdown_from 'lib/Foo/Bar.pm';
+    name 'Some-Module';
+    readme_markdown_from 'lib/Some/Module.pm';
 
 =head1 DESCRIPTION
 
@@ -68,12 +78,31 @@ Does nothing on the user-side. On the author-side it will generate a
 C<README.mkdn> file using L<Pod::Markdown> from the POD in the file passed as
 a parameter.
 
-  readme_markdown_from 'lib/Some/Module.pm';
+    readme_markdown_from 'lib/Some/Module.pm';
 
 If a second parameter is set to a true value then the C<README.mkdn> will be
 removed at C<make distclean>.
 
-  readme_markdown_from 'lib/Some/Module.pm' => 'clean';
+    readme_markdown_from 'lib/Some/Module.pm' => 'clean';
+
+It will die unless a file name is given.
+
+=item C<reference_module>
+
+A utility function that saves you from repeatedly naming a reference module
+from which to extract information.
+
+    reference_module 'lib/Some/Module.pm';
+
+is equivalent to:
+
+    all_from 'lib/Some/Module.pm';
+    readme_from 'lib/Some/Module.pm';
+    readme_markdown_from 'lib/Some/Module.pm';
+
+It will die unless a file name is given. Note that C<reference_module> will
+not work with L<Shipit::Step::FindVersion> because that module is looking for
+a C<version_from> or C<all_from> string in C<Makefile.PL>
 
 =back
 

@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use base qw(Module::Install::Base);
 
@@ -16,6 +16,7 @@ sub readme_markdown_from {
     # require, not use because otherwise Makefile.PL will complain if
     # non-authors don't have Pod::Markdown, which would be bad.
     require Pod::Markdown;
+    $self->admin->copy_package('Pod::Markdown', $INC{'Pod/Markdown.pm'});
 
     my $parser = Pod::Markdown->new;
     $parser->parse_from_file($file);
@@ -31,6 +32,24 @@ license_clean:
 \t\$(RM_F) README.mkdn
 END
     1;
+}
+
+sub readme_markdown_from_pod {
+    my ($self, $clean) = @_;
+    return unless $Module::Install::AUTHOR;
+    unless ($self->Meta->{values}{all_from}) {
+        die "set 'all_from' or use 'readme_markdown_from'\n";
+    }
+    $self->readme_markdown_from($self->Meta->{values}{all_from}, $clean);
+}
+
+sub readme_from_pod {
+    my ($self, $clean) = @_;
+    return unless $Module::Install::AUTHOR;
+    unless ($self->Meta->{values}{all_from}) {
+        die "set 'all_from' or use 'readme_from'\n";
+    }
+    $self->readme_from($self->Meta->{values}{all_from}, $clean);
 }
 
 sub reference_module {
@@ -86,6 +105,24 @@ removed at C<make distclean>.
     readme_markdown_from 'lib/Some/Module.pm' => 'clean';
 
 It will die unless a file name is given.
+
+=item C<readme_markdown_from_pod>
+
+Like C<readme_markdown_from> but assumes that C<all_from> has been called
+before and uses the filename stored there to generate the C<README.mkdn>. It
+then calls C<readme_markdown_from> with that filename. If this function is
+given an optional boolean parameter, that will be passed to
+C<readme_markdown_from> as well, indicating whether to clean up the generated
+C<README.mkdn> file at C<make distclean> time.
+
+=item C<readme_from_pod>
+
+Like C<readme_markdown_from_pod>, but affects the plain-text C<README> file
+generation done in L<Module::Install::ReadmeFromPod>. This function would be
+better placed in that module and might move there eventually. It is given here
+as a convenience because if you want to generate both C<README> and
+C<README.mkdn> you can do this here without repeating the filename given in
+C<all_from>.
 
 =item C<reference_module>
 

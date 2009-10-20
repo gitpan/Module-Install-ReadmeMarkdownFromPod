@@ -30,4 +30,4 @@ resources:
   homepage: http://search.cpan.org/dist/Module-Install-ReadmeMarkdownFromPod/
   license: http://dev.perl.org/licenses/
   repository: git://github.com/hanekomu/module-install-readmemarkdownfrompod.git
-version: 0.02
+version: 0.03
